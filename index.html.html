@@ -1,0 +1,3027 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skillgrid — Конструктор статей (интерактивный прототип)</title>
+<style>
+  /* ============================================
+     Skillgrid Design Tokens (из вашей дизайн-системы)
+     ============================================ */
+  :root {
+    --sg-bg: #F4F6FB;
+    --sg-white: #FFFFFF;
+    --sg-surface-alt: #F9F9F9;
+    --sg-border: #DCE3EB;
+    --sg-border-hover: #AABBCA;
+    --sg-text: #111827;
+    --sg-text-muted: #768694;
+    --sg-text-subtle: #8293A2;
+
+    --sg-primary: #0070FF;
+    --sg-primary-hover: #005FDB;
+    --sg-primary-soft: #EAF2FF;
+    --sg-primary-light: #5E9EFF;
+
+    --sg-info: #0C8CE9;
+    --sg-info-soft: #E6F4FD;
+
+    --sg-success: #0DC267;
+    --sg-success-soft: #E8F9EC;
+
+    --sg-danger: #FF4D3A;
+    --sg-danger-soft: #FEF2EF;
+
+    --sg-warning: #F5A623;
+    --sg-warning-soft: #FEF4E6;
+
+    --sg-purple: #9054EA;
+    --sg-purple-soft: #F7F4FF;
+
+    --sg-radius-sm: 8px;
+    --sg-radius-md: 12px;
+    --sg-radius-lg: 16px;
+    --sg-radius-xl: 24px;
+    --sg-radius-pill: 9999px;
+
+    --sg-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --sg-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.06);
+    --sg-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.08);
+    --sg-shadow-xl: 0 24px 64px rgba(16, 24, 40, 0.10);
+
+    --sg-space-1: 4px;
+    --sg-space-2: 8px;
+    --sg-space-3: 12px;
+    --sg-space-4: 16px;
+    --sg-space-5: 20px;
+    --sg-space-6: 24px;
+    --sg-space-8: 32px;
+    --sg-space-10: 40px;
+
+    --sg-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display",
+               "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: var(--sg-font);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--sg-text);
+    background: var(--sg-bg);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  button { font-family: inherit; cursor: pointer; border: none; background: transparent; }
+  input, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+  /* ============================================
+     TOPBAR
+     ============================================ */
+  .topbar {
+    height: 60px;
+    background: var(--sg-white);
+    border-bottom: 1px solid var(--sg-border);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--sg-space-6);
+    gap: var(--sg-space-4);
+    position: relative;
+    z-index: 10;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--sg-space-2);
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .topbar-logo-mark {
+    width: 28px; height: 28px;
+    background: var(--sg-primary);
+    border-radius: var(--sg-radius-sm);
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+
+  .topbar-divider {
+    width: 1px; height: 24px;
+    background: var(--sg-border);
+    margin: 0 var(--sg-space-2);
+  }
+
+  .topbar-breadcrumb {
+    display: flex; align-items: center;
+    gap: var(--sg-space-2);
+    color: var(--sg-text-muted);
+    font-size: 13px;
+  }
+
+  .topbar-breadcrumb-current { color: var(--sg-text); font-weight: 500; }
+
+  .topbar-status {
+    display: flex; align-items: center;
+    gap: var(--sg-space-2);
+    padding: 6px var(--sg-space-3);
+    background: var(--sg-success-soft);
+    color: var(--sg-success);
+    border-radius: var(--sg-radius-pill);
+    font-size: 12px; font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .topbar-status.saving { background: var(--sg-warning-soft); color: var(--sg-warning); }
+  .topbar-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex; align-items: center;
+    gap: var(--sg-space-3);
+  }
+
+  /* ============================================
+     BUTTONS
+     ============================================ */
+  .btn {
+    display: inline-flex; align-items: center;
+    gap: var(--sg-space-2);
+    height: 36px; padding: 0 var(--sg-space-4);
+    border-radius: var(--sg-radius-sm);
+    font-size: 13px; font-weight: 500;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn-primary { background: var(--sg-primary); color: white; }
+  .btn-primary:hover { background: var(--sg-primary-hover); }
+
+  .btn-secondary {
+    background: var(--sg-white); color: var(--sg-text);
+    border: 1px solid var(--sg-border);
+  }
+  .btn-secondary:hover { border-color: var(--sg-border-hover); }
+
+  .btn-ghost { background: transparent; color: var(--sg-text); }
+  .btn-ghost:hover { background: var(--sg-bg); }
+
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ============================================
+     LAYOUT
+     ============================================ */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 320px;
+    height: calc(100vh - 60px);
+  }
+
+  /* ============================================
+     LEFT PANEL — BLOCKS
+     ============================================ */
+  .blocks-panel {
+    background: var(--sg-white);
+    border-right: 1px solid var(--sg-border);
+    padding: var(--sg-space-5);
+    overflow-y: auto;
+  }
+
+  .panel-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--sg-text-muted);
+    margin-bottom: var(--sg-space-3);
+  }
+
+  .panel-hint {
+    font-size: 11px; color: var(--sg-text-muted);
+    margin-top: var(--sg-space-2);
+    margin-bottom: var(--sg-space-4);
+    line-height: 1.5;
+  }
+
+  .blocks-search {
+    position: relative;
+    margin-bottom: var(--sg-space-5);
+  }
+
+  .blocks-search input {
+    width: 100%; height: 36px;
+    padding: 0 var(--sg-space-3) 0 36px;
+    background: var(--sg-bg);
+    border: 1px solid transparent;
+    border-radius: var(--sg-radius-sm);
+    font-size: 13px; outline: none;
+    transition: all 0.15s ease;
+  }
+
+  .blocks-search input:focus {
+    background: var(--sg-white);
+    border-color: var(--sg-primary);
+  }
+
+  .blocks-search svg {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    color: var(--sg-text-muted);
+  }
+
+  .blocks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sg-space-2);
+  }
+
+  .block-card {
+    padding: var(--sg-space-3);
+    background: var(--sg-bg);
+    border-radius: var(--sg-radius-md);
+    cursor: grab;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    display: flex; flex-direction: column;
+    gap: var(--sg-space-2);
+    align-items: center; text-align: center;
+    user-select: none;
+  }
+
+  .block-card:hover {
+    background: var(--sg-primary-soft);
+    border-color: var(--sg-primary);
+    transform: translateY(-1px);
+  }
+
+  .block-card:active { cursor: grabbing; }
+  .block-card.dragging { opacity: 0.5; }
+
+  .block-card-icon {
+    width: 36px; height: 36px;
+    background: var(--sg-white);
+    border-radius: var(--sg-radius-sm);
+    display: grid; place-items: center;
+    color: var(--sg-primary);
+  }
+
+  .block-card-name { font-size: 12px; font-weight: 500; }
+
+  /* Templates */
+  .templates-section {
+    margin-top: var(--sg-space-6);
+    padding-top: var(--sg-space-6);
+    border-top: 1px solid var(--sg-border);
+  }
+
+  .templates-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sg-space-3);
+  }
+
+  .add-template-btn {
+    display: inline-flex; align-items: center;
+    gap: 4px;
+    font-size: 11px; font-weight: 500;
+    color: var(--sg-primary);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+
+  .add-template-btn:hover { background: var(--sg-primary-soft); }
+
+  .template-card {
+    padding: var(--sg-space-3);
+    background: var(--sg-bg);
+    border-radius: var(--sg-radius-md);
+    cursor: pointer;
+    margin-bottom: var(--sg-space-2);
+    transition: all 0.15s ease;
+    display: flex; align-items: center;
+    gap: var(--sg-space-3);
+    position: relative;
+  }
+
+  .template-card:hover { background: var(--sg-primary-soft); }
+
+  .template-card.custom {
+    background: var(--sg-primary-soft);
+    border: 1px dashed var(--sg-primary);
+  }
+
+  .template-icon {
+    width: 32px; height: 32px;
+    background: var(--sg-white);
+    border-radius: var(--sg-radius-sm);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .template-name { font-size: 12px; font-weight: 500; }
+  .template-desc { font-size: 11px; color: var(--sg-text-muted); }
+
+  .template-delete {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    opacity: 0; transition: opacity 0.15s ease;
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    display: grid; place-items: center;
+    color: var(--sg-text-muted);
+  }
+
+  .template-card:hover .template-delete { opacity: 1; }
+  .template-delete:hover { background: var(--sg-danger-soft); color: var(--sg-danger); }
+
+  /* ============================================
+     CANVAS
+     ============================================ */
+  .canvas {
+    overflow-y: auto;
+    background: var(--sg-bg);
+    position: relative;
+  }
+
+  .canvas-toolbar {
+    position: sticky; top: 0;
+    background: rgba(244, 246, 251, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--sg-border);
+    padding: var(--sg-space-3) var(--sg-space-5);
+    display: flex; align-items: center;
+    justify-content: center;
+    gap: var(--sg-space-3);
+    z-index: 5;
+  }
+
+  .device-switcher {
+    display: flex;
+    background: var(--sg-white);
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    padding: 3px; gap: 2px;
+  }
+
+  .device-btn {
+    display: flex; align-items: center;
+    gap: 6px; padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    color: var(--sg-text-muted);
+    transition: all 0.15s ease;
+  }
+
+  .device-btn.active { background: var(--sg-primary-soft); color: var(--sg-primary); }
+  .device-btn svg { width: 14px; height: 14px; }
+
+  .canvas-mode-toggle {
+    position: absolute;
+    right: var(--sg-space-5);
+    top: 50%; transform: translateY(-50%);
+    display: flex;
+    background: var(--sg-white);
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    padding: 3px; gap: 2px;
+  }
+
+  .mode-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    color: var(--sg-text-muted);
+  }
+
+  .mode-btn.active { background: var(--sg-text); color: white; }
+
+  .article-canvas {
+    padding: var(--sg-space-8) var(--sg-space-5);
+    display: flex; justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .article-wrapper {
+    width: 100%; max-width: 760px;
+    background: var(--sg-white);
+    border-radius: var(--sg-radius-xl);
+    box-shadow: var(--sg-shadow-lg);
+    overflow: hidden;
+    transition: max-width 0.3s ease;
+    min-height: 500px;
+  }
+
+  /* Device widths */
+  .canvas.device-tablet .article-wrapper { max-width: 600px; }
+  .canvas.device-mobile .article-wrapper { max-width: 380px; }
+  .canvas.device-mobile .article-canvas,
+  .canvas.device-tablet .article-canvas { padding: var(--sg-space-6); }
+
+  /* ============================================
+     BLOCK WRAPPER (все блоки)
+     ============================================ */
+  .article-block {
+    position: relative;
+    transition: outline 0.15s ease;
+  }
+
+  .article-block:hover .block-toolbar { opacity: 1; }
+
+  .article-block.selected {
+    outline: 2px solid var(--sg-primary);
+    outline-offset: -2px;
+  }
+
+  .article-block.dragging { opacity: 0.3; }
+
+  .block-toolbar {
+    position: absolute;
+    top: var(--sg-space-2);
+    right: var(--sg-space-2);
+    display: flex; gap: 2px;
+    background: var(--sg-white);
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    padding: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    box-shadow: var(--sg-shadow-md);
+    z-index: 3;
+  }
+
+  .block-toolbar button {
+    width: 28px; height: 28px;
+    border-radius: 5px;
+    display: grid; place-items: center;
+    color: var(--sg-text-muted);
+    transition: all 0.1s ease;
+  }
+
+  .block-toolbar button:hover { background: var(--sg-bg); color: var(--sg-text); }
+  .block-toolbar button.danger:hover { background: var(--sg-danger-soft); color: var(--sg-danger); }
+  .block-toolbar button.drag-handle { cursor: grab; }
+  .block-toolbar button.drag-handle:active { cursor: grabbing; }
+  .block-toolbar svg { width: 14px; height: 14px; }
+
+  /* Drop zone between blocks */
+  .drop-zone {
+    height: 24px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+  }
+
+  .article-wrapper:hover .drop-zone { opacity: 0.6; }
+  .drop-zone:hover { opacity: 1 !important; }
+  .drop-zone.drag-over {
+    opacity: 1 !important;
+    height: 40px;
+  }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    left: var(--sg-space-8);
+    right: var(--sg-space-8);
+    height: 1px;
+    background: var(--sg-primary);
+    opacity: 0.5;
+    transition: all 0.15s ease;
+  }
+
+  .drop-zone.drag-over::before {
+    height: 3px;
+    background: var(--sg-primary);
+    opacity: 1;
+    box-shadow: 0 0 0 4px var(--sg-primary-soft);
+  }
+
+  .drop-zone-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--sg-primary);
+    color: white;
+    display: grid; place-items: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: transform 0.15s ease;
+  }
+
+  .drop-zone-btn:hover { transform: scale(1.15); }
+
+  /* Empty state */
+  .empty-article {
+    padding: var(--sg-space-10) var(--sg-space-6);
+    text-align: center;
+    color: var(--sg-text-muted);
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sg-space-3);
+  }
+
+  .empty-article svg { width: 48px; height: 48px; opacity: 0.4; }
+  .empty-article-title { font-size: 16px; font-weight: 600; color: var(--sg-text); }
+  .empty-article-desc { font-size: 13px; max-width: 300px; }
+
+  .empty-article.drag-over {
+    background: var(--sg-primary-soft);
+    border: 2px dashed var(--sg-primary);
+    border-radius: var(--sg-radius-lg);
+    margin: var(--sg-space-4);
+    color: var(--sg-primary);
+  }
+
+  /* ============================================
+     БЛОКИ — содержимое
+     ============================================ */
+
+  /* Обложка */
+  .block-cover {
+    --cover-bg: linear-gradient(135deg, #2151a1 0%, #0070FF 50%, #5E9EFF 100%);
+    --cover-darken: 0.5;
+    min-height: 380px;
+    background: var(--cover-bg);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    padding: var(--sg-space-10) var(--sg-space-8);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: white;
+  }
+
+  .block-cover.height-s { min-height: 280px; }
+  .block-cover.height-m { min-height: 380px; }
+  .block-cover.height-l { min-height: 480px; }
+
+  .block-cover.align-center { text-align: center; align-items: center; }
+  .block-cover.align-center .block-cover-content { text-align: center; }
+  .block-cover.align-center p { margin-left: auto; margin-right: auto; }
+
+  /* Затемнение для фото-фона */
+  .block-cover.has-image::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(0,0,0, calc(var(--cover-darken) * 0.35)) 0%,
+      rgba(0,0,0, var(--cover-darken)) 100%);
+    pointer-events: none;
+    transition: background 0.2s ease;
+  }
+
+  /* Лёгкое затемнение для градиентного фона (для читаемости) */
+  .block-cover:not(.has-image)::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.15) 100%);
+    pointer-events: none;
+  }
+
+  .block-cover-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  /* Кнопки управления фоном обложки */
+  .cover-bg-controls {
+    position: absolute;
+    top: var(--sg-space-3);
+    left: var(--sg-space-3);
+    display: flex;
+    gap: var(--sg-space-2);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 2;
+  }
+
+  .article-block:hover .cover-bg-controls,
+  .article-block.selected .cover-bg-controls { opacity: 1; }
+
+  .cover-bg-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 var(--sg-space-3);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: var(--sg-radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+
+  .cover-bg-btn:hover { background: rgba(0, 0, 0, 0.7); }
+  .cover-bg-btn.danger:hover { background: rgba(255, 77, 58, 0.8); }
+  .cover-bg-btn svg { width: 14px; height: 14px; }
+
+  .block-cover-meta {
+    display: flex; gap: var(--sg-space-3);
+    font-size: 12px; opacity: 0.9;
+    margin-bottom: var(--sg-space-4);
+    flex-wrap: wrap;
+  }
+
+  .block-cover.align-center .block-cover-meta { justify-content: center; }
+
+  .block-cover-meta span {
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.2);
+    border-radius: var(--sg-radius-pill);
+    backdrop-filter: blur(8px);
+  }
+
+  .block-cover h1 {
+    font-size: 34px; line-height: 1.15;
+    font-weight: 700;
+    margin-bottom: var(--sg-space-3);
+    letter-spacing: -0.5px;
+    outline: none;
+  }
+
+  .block-cover p {
+    font-size: 15px; opacity: 0.92;
+    max-width: 560px; line-height: 1.5;
+    outline: none;
+  }
+
+  [contenteditable]:hover { cursor: text; }
+  [contenteditable]:focus { outline: none; }
+
+  [contenteditable]:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Текст */
+  .block-text {
+    padding: var(--sg-space-5) var(--sg-space-8);
+  }
+
+  .block-text h2, .block-text h3, .block-text p, .block-text ul, .block-text ol {
+    outline: none;
+  }
+
+  .block-text h2 {
+    font-size: 24px; line-height: 1.25;
+    font-weight: 700;
+    margin: var(--sg-space-4) 0 var(--sg-space-3) 0;
+    letter-spacing: -0.3px;
+  }
+
+  .block-text h3 {
+    font-size: 18px; line-height: 1.3;
+    font-weight: 600;
+    margin: var(--sg-space-3) 0 var(--sg-space-2) 0;
+  }
+
+  .block-text p {
+    font-size: 15px; line-height: 1.65;
+    color: #2A3647;
+    margin-bottom: var(--sg-space-3);
+  }
+
+  .block-text p:last-child { margin-bottom: 0; }
+
+  .block-text ul, .block-text ol {
+    padding-left: var(--sg-space-5);
+    margin-bottom: var(--sg-space-3);
+  }
+
+  .block-text li {
+    font-size: 15px; line-height: 1.65;
+    color: #2A3647;
+    margin-bottom: 6px;
+  }
+
+  .block-text strong { font-weight: 600; color: var(--sg-text); }
+  .block-text em { font-style: italic; }
+  .block-text u { text-decoration: underline; }
+
+  .block-text a {
+    color: var(--sg-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s ease;
+  }
+  .block-text a:hover { border-bottom-color: var(--sg-primary); }
+
+  /* Изображение */
+  .block-image { padding: var(--sg-space-5) var(--sg-space-8); }
+
+  .block-image-frame {
+    border-radius: var(--sg-radius-lg);
+    overflow: hidden;
+    background: var(--sg-bg);
+    aspect-ratio: 16 / 9;
+    display: grid; place-items: center;
+    color: var(--sg-text-muted);
+    background-image:
+      linear-gradient(135deg, #e8edf5 25%, transparent 25%),
+      linear-gradient(225deg, #e8edf5 25%, transparent 25%),
+      linear-gradient(45deg, #e8edf5 25%, transparent 25%),
+      linear-gradient(315deg, #e8edf5 25%, transparent 25%);
+    background-position: 10px 0, 10px 0, 0 0, 0 0;
+    background-size: 20px 20px;
+    background-color: #f3f6fb;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    position: relative;
+  }
+
+  .block-image-frame:hover { background-color: #e8edf5; }
+
+  .block-image-frame.has-image {
+    background: none;
+    aspect-ratio: auto;
+  }
+
+  .block-image-frame img {
+    width: 100%; height: auto; display: block;
+  }
+
+  .block-image-caption {
+    margin-top: var(--sg-space-2);
+    font-size: 12px;
+    color: var(--sg-text-muted);
+    text-align: center;
+    outline: none;
+  }
+
+  /* Цитата */
+  .block-quote { padding: var(--sg-space-5) var(--sg-space-8); }
+
+  .quote-body {
+    border-left: 3px solid var(--sg-primary);
+    padding: var(--sg-space-3) 0 var(--sg-space-3) var(--sg-space-5);
+    transition: border-color 0.15s ease;
+  }
+
+  .quote-text {
+    font-size: 19px;
+    line-height: 1.5;
+    font-style: italic;
+    color: var(--sg-text);
+    margin-bottom: var(--sg-space-3);
+    font-weight: 500;
+    outline: none;
+  }
+
+  .quote-author { display: flex; align-items: center; gap: var(--sg-space-3); }
+
+  .quote-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sg-primary) 0%, var(--sg-purple) 100%);
+    color: white;
+    display: grid; place-items: center;
+    font-weight: 600; font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .quote-name { font-size: 13px; font-weight: 600; outline: none; }
+  .quote-role { font-size: 12px; color: var(--sg-text-muted); outline: none; }
+
+  /* Callout */
+  .block-callout-wrapper { padding: var(--sg-space-4) var(--sg-space-8); }
+
+  .block-callout {
+    display: flex;
+    gap: var(--sg-space-3);
+    padding: var(--sg-space-4) var(--sg-space-5);
+    border-radius: var(--sg-radius-md);
+    background: var(--sg-info-soft);
+    border-left: 3px solid var(--sg-info);
+  }
+
+  .block-callout.tip { background: var(--sg-success-soft); border-left-color: var(--sg-success); }
+  .block-callout.warning { background: var(--sg-warning-soft); border-left-color: var(--sg-warning); }
+  .block-callout.danger { background: var(--sg-danger-soft); border-left-color: var(--sg-danger); }
+
+  .callout-icon {
+    width: 24px; height: 24px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    color: var(--sg-info);
+    font-size: 18px;
+  }
+  .block-callout.tip .callout-icon { color: var(--sg-success); }
+  .block-callout.warning .callout-icon { color: var(--sg-warning); }
+  .block-callout.danger .callout-icon { color: var(--sg-danger); }
+
+  .callout-body { flex: 1; }
+  .callout-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; outline: none; }
+  .callout-text { font-size: 14px; line-height: 1.55; color: #2A3647; outline: none; }
+
+  /* Аккордеон */
+  .block-accordion { padding: var(--sg-space-4) var(--sg-space-8); }
+
+  .accordion-title {
+    font-size: 18px; font-weight: 600;
+    margin-bottom: var(--sg-space-3);
+    outline: none;
+  }
+
+  .accordion-item {
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    margin-bottom: var(--sg-space-2);
+    overflow: hidden;
+    background: var(--sg-white);
+    transition: all 0.15s ease;
+  }
+
+  .accordion-item:hover { border-color: var(--sg-border-hover); }
+  .accordion-item.open {
+    border-color: var(--sg-primary);
+    box-shadow: 0 0 0 3px var(--sg-primary-soft);
+  }
+
+  .accordion-header {
+    padding: var(--sg-space-4) var(--sg-space-5);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    cursor: pointer; user-select: none;
+    font-size: 14px; font-weight: 500;
+    gap: var(--sg-space-3);
+  }
+
+  .accordion-q { flex: 1; outline: none; }
+
+  .accordion-actions {
+    display: flex; gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .accordion-item:hover .accordion-actions { opacity: 1; }
+
+  .accordion-action {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    display: grid; place-items: center;
+    color: var(--sg-text-muted);
+    transition: all 0.1s ease;
+  }
+
+  .accordion-action:hover { background: var(--sg-bg); color: var(--sg-danger); }
+  .accordion-action svg { width: 12px; height: 12px; }
+
+  .accordion-chevron {
+    transition: transform 0.2s ease;
+    color: var(--sg-text-muted);
+    flex-shrink: 0;
+  }
+
+  .accordion-item.open .accordion-chevron { transform: rotate(180deg); color: var(--sg-primary); }
+
+  .accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .accordion-item.open .accordion-body { max-height: 600px; }
+
+  .accordion-body-inner {
+    padding: var(--sg-space-3) var(--sg-space-5) var(--sg-space-4);
+    font-size: 14px; line-height: 1.6;
+    color: #2A3647;
+    border-top: 1px solid var(--sg-border);
+    outline: none;
+  }
+
+  .accordion-add {
+    margin-top: var(--sg-space-3);
+    padding: var(--sg-space-3);
+    border: 1px dashed var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    text-align: center;
+    color: var(--sg-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .accordion-add:hover {
+    border-color: var(--sg-primary);
+    color: var(--sg-primary);
+    background: var(--sg-primary-soft);
+  }
+
+  /* Разделитель */
+  .block-divider {
+    padding: var(--sg-space-4) var(--sg-space-8);
+    display: flex; justify-content: center; align-items: center;
+  }
+
+  .divider-dots { display: flex; gap: 10px; }
+  .divider-dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--sg-border-hover);
+  }
+
+  .divider-line {
+    width: 60%; height: 1px;
+    background: var(--sg-border);
+  }
+
+  .divider-space { height: 40px; }
+
+  /* ============================================
+     FLOATING TEXT TOOLBAR
+     ============================================ */
+  .floating-toolbar {
+    position: fixed;
+    background: var(--sg-text);
+    color: white;
+    border-radius: var(--sg-radius-sm);
+    padding: 4px;
+    display: none;
+    gap: 2px;
+    z-index: 100;
+    box-shadow: var(--sg-shadow-xl);
+    animation: toolbar-appear 0.15s ease;
+  }
+
+  @keyframes toolbar-appear {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .floating-toolbar.visible { display: flex; }
+
+  .ft-btn {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    display: grid; place-items: center;
+    color: rgba(255,255,255,0.8);
+    transition: all 0.1s ease;
+    font-size: 13px; font-weight: 600;
+  }
+
+  .ft-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+  .ft-btn.active { background: var(--sg-primary); color: white; }
+  .ft-btn svg { width: 14px; height: 14px; }
+
+  .ft-divider {
+    width: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 4px 2px;
+  }
+
+  .ft-colors {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0;
+    margin-top: 6px;
+    background: var(--sg-text);
+    padding: 8px;
+    border-radius: var(--sg-radius-sm);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    box-shadow: var(--sg-shadow-xl);
+  }
+
+  .ft-colors.visible { display: grid; }
+
+  .ft-color {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  .ft-color:hover { transform: scale(1.2); }
+
+  /* ============================================
+     SETTINGS PANEL
+     ============================================ */
+  .settings-panel {
+    background: var(--sg-white);
+    border-left: 1px solid var(--sg-border);
+    padding: var(--sg-space-5);
+    overflow-y: auto;
+  }
+
+  .settings-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--sg-space-4);
+    border-bottom: 1px solid var(--sg-border);
+    margin-bottom: var(--sg-space-4);
+  }
+
+  .settings-block-name {
+    display: flex; align-items: center;
+    gap: var(--sg-space-2);
+    font-weight: 600; font-size: 14px;
+  }
+
+  .settings-block-name-icon {
+    width: 28px; height: 28px;
+    background: var(--sg-primary-soft);
+    color: var(--sg-primary);
+    border-radius: var(--sg-radius-sm);
+    display: grid; place-items: center;
+  }
+
+  .settings-block-name-icon svg { width: 14px; height: 14px; }
+
+  .settings-group { margin-bottom: var(--sg-space-5); }
+
+  /* Палитра градиентов для обложки */
+  .cover-gradient-palette {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .gradient-swatch {
+    aspect-ratio: 2 / 1;
+    border-radius: var(--sg-radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    border: 2px solid transparent;
+  }
+
+  .gradient-swatch:hover { transform: scale(1.05); }
+  .gradient-swatch.active {
+    border-color: var(--sg-primary);
+    box-shadow: 0 0 0 3px var(--sg-primary-soft);
+  }
+
+  .gradient-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  /* Превью загруженного фото-фона в настройках */
+  .cover-bg-preview {
+    aspect-ratio: 16 / 9;
+    border-radius: var(--sg-radius-md);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid var(--sg-border);
+    margin-bottom: 8px;
+  }
+
+  .cover-bg-preview-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.7) 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 10px 12px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .cover-bg-preview-remove {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .cover-bg-preview-remove:hover { background: var(--sg-danger); }
+
+  .settings-btn-ghost {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    background: var(--sg-bg);
+    border: 1px dashed var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--sg-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .settings-btn-ghost:hover {
+    background: var(--sg-primary-soft);
+    border-color: var(--sg-primary);
+    color: var(--sg-primary);
+  }
+
+  .settings-label {
+    display: block;
+    font-size: 12px; font-weight: 500;
+    color: var(--sg-text-muted);
+    margin-bottom: var(--sg-space-2);
+  }
+
+  .settings-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sg-space-2);
+  }
+
+  .settings-radio {
+    padding: var(--sg-space-3);
+    background: var(--sg-bg);
+    border: 1px solid transparent;
+    border-radius: var(--sg-radius-sm);
+    cursor: pointer; text-align: center;
+    font-size: 12px; font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .settings-radio:hover { border-color: var(--sg-border); }
+
+  .settings-radio.active {
+    background: var(--sg-primary-soft);
+    border-color: var(--sg-primary);
+    color: var(--sg-primary);
+  }
+
+  .settings-colors {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 6px;
+  }
+
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    border: 2px solid transparent;
+  }
+
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.active::after {
+    content: '';
+    position: absolute; inset: -4px;
+    border: 2px solid var(--sg-primary);
+    border-radius: 50%;
+  }
+
+  .settings-input {
+    width: 100%; height: 36px;
+    padding: 0 var(--sg-space-3);
+    background: var(--sg-bg);
+    border: 1px solid transparent;
+    border-radius: var(--sg-radius-sm);
+    font-size: 13px; outline: none;
+    transition: all 0.15s ease;
+  }
+
+  .settings-input:focus { background: var(--sg-white); border-color: var(--sg-primary); }
+
+  .settings-toggle {
+    display: flex; justify-content: space-between;
+    align-items: center;
+    padding: var(--sg-space-2) 0;
+  }
+
+  .toggle-switch {
+    width: 36px; height: 20px;
+    background: var(--sg-border);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch.active { background: var(--sg-primary); }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle-switch.active::after { transform: translateX(16px); }
+
+  .empty-settings {
+    text-align: center;
+    padding: var(--sg-space-10) var(--sg-space-4);
+    color: var(--sg-text-muted);
+  }
+
+  .empty-settings svg {
+    width: 40px; height: 40px;
+    margin-bottom: var(--sg-space-3);
+    opacity: 0.5;
+  }
+
+  .empty-settings-title {
+    font-size: 13px; font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--sg-text);
+  }
+
+  .empty-settings-desc { font-size: 12px; }
+
+  /* ============================================
+     PREVIEW MODE
+     ============================================ */
+  .preview-mode .blocks-panel,
+  .preview-mode .settings-panel { display: none; }
+
+  .preview-mode .layout { grid-template-columns: 1fr; }
+
+  .preview-mode .article-block:hover { outline: none; }
+  .preview-mode .block-toolbar,
+  .preview-mode .drop-zone,
+  .preview-mode .accordion-add,
+  .preview-mode .accordion-actions { display: none !important; }
+  .preview-mode .article-block.selected { outline: none; }
+  .preview-mode [contenteditable] { cursor: default; }
+
+  .canvas.device-mobile.preview-active .article-wrapper {
+    max-width: 390px;
+    border-radius: 40px;
+    border: 10px solid #1d1d1f;
+    box-shadow: var(--sg-shadow-xl);
+    overflow: hidden;
+  }
+
+  .canvas.device-tablet.preview-active .article-wrapper {
+    max-width: 720px;
+    border-radius: 28px;
+    border: 14px solid #1d1d1f;
+    box-shadow: var(--sg-shadow-xl);
+  }
+
+  /* Mobile adaptive */
+  .canvas.device-mobile .block-cover {
+    padding: var(--sg-space-6) var(--sg-space-5);
+    min-height: 280px;
+  }
+
+  .canvas.device-mobile .block-cover h1 { font-size: 24px; }
+  .canvas.device-mobile .block-cover p { font-size: 14px; }
+
+  .canvas.device-mobile .block-text,
+  .canvas.device-mobile .block-image,
+  .canvas.device-mobile .block-quote,
+  .canvas.device-mobile .block-accordion,
+  .canvas.device-mobile .block-callout-wrapper,
+  .canvas.device-mobile .block-divider {
+    padding-left: var(--sg-space-5);
+    padding-right: var(--sg-space-5);
+  }
+
+  .canvas.device-mobile .block-text h2 { font-size: 20px; }
+  .canvas.device-mobile .block-text p,
+  .canvas.device-mobile .block-text li { font-size: 14px; }
+  .canvas.device-mobile .quote-text { font-size: 16px; }
+
+  /* ============================================
+     MODAL
+     ============================================ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 24, 40, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fade-in 0.2s ease;
+  }
+
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal-overlay.visible { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: var(--sg-radius-lg);
+    padding: var(--sg-space-6);
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--sg-shadow-xl);
+    animation: modal-in 0.2s ease;
+  }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-title {
+    font-size: 16px; font-weight: 600;
+    margin-bottom: var(--sg-space-2);
+  }
+
+  .modal-desc {
+    font-size: 13px; color: var(--sg-text-muted);
+    margin-bottom: var(--sg-space-5);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: var(--sg-space-3);
+    justify-content: flex-end;
+    margin-top: var(--sg-space-5);
+  }
+
+  /* Demo pill */
+  .demo-pill {
+    position: fixed;
+    bottom: var(--sg-space-5);
+    left: 50%; transform: translateX(-50%);
+    background: var(--sg-text);
+    color: white;
+    padding: var(--sg-space-3) var(--sg-space-5);
+    border-radius: var(--sg-radius-pill);
+    font-size: 12px; font-weight: 500;
+    box-shadow: var(--sg-shadow-xl);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: var(--sg-space-3);
+  }
+
+  .demo-pill-dot {
+    width: 6px; height: 6px;
+    background: var(--sg-success);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%; transform: translateX(-50%);
+    background: var(--sg-text);
+    color: white;
+    padding: 10px 18px;
+    border-radius: var(--sg-radius-sm);
+    font-size: 13px;
+    box-shadow: var(--sg-shadow-lg);
+    z-index: 200;
+    animation: fadeInOut 2.5s ease forwards;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, 10px); }
+    10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -10px); }
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--sg-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--sg-border-hover); }
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-mark">SG</div>
+    Skillgrid
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-breadcrumb">
+    <span>Курсы</span>
+    <span>›</span>
+    <span>Онбординг продукта</span>
+    <span>›</span>
+    <span class="topbar-breadcrumb-current">Введение в методологию</span>
+  </div>
+  <div class="topbar-status" id="saveStatus">
+    <span class="topbar-status-dot"></span>
+    <span id="saveStatusText">Сохранено</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-secondary">Сохранить черновик</button>
+    <button class="btn btn-primary">Опубликовать</button>
+  </div>
+</header>
+
+<div class="layout" id="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="blocks-panel">
+    <div class="blocks-search">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Найти блок..." id="blockSearch">
+    </div>
+
+    <div class="panel-title">Блоки</div>
+    <div class="panel-hint">Перетащите в статью или кликните, чтобы добавить в конец</div>
+
+    <div class="blocks-grid" id="blocksGrid">
+      <!-- Заполняется JS -->
+    </div>
+
+    <div class="templates-section">
+      <div class="templates-header">
+        <div class="panel-title" style="margin: 0;">Шаблоны</div>
+        <button class="add-template-btn" id="saveAsTemplateBtn" title="Сохранить текущую статью как шаблон">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Создать
+        </button>
+      </div>
+
+      <div class="panel-hint" style="margin-top: 0;">Админ клиента настраивает свои шаблоны</div>
+
+      <div id="templatesList">
+        <!-- Заполняется JS -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- CANVAS -->
+  <main class="canvas" id="canvas">
+    <div class="canvas-toolbar">
+      <div class="device-switcher">
+        <button class="device-btn active" data-device="desktop">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Desktop
+        </button>
+        <button class="device-btn" data-device="tablet">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          Tablet
+        </button>
+        <button class="device-btn" data-device="mobile">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          Mobile
+        </button>
+      </div>
+
+      <div class="canvas-mode-toggle">
+        <button class="mode-btn active" data-mode="edit">Редактор</button>
+        <button class="mode-btn" data-mode="preview">Превью</button>
+      </div>
+    </div>
+
+    <div class="article-canvas">
+      <article class="article-wrapper" id="article">
+        <!-- Наполняется JS -->
+      </article>
+    </div>
+  </main>
+
+  <!-- SETTINGS PANEL -->
+  <aside class="settings-panel" id="settingsPanel">
+    <!-- Наполняется JS -->
+  </aside>
+
+</div>
+
+<!-- Floating toolbar for text formatting -->
+<div class="floating-toolbar" id="floatingToolbar">
+  <button class="ft-btn" data-cmd="bold" title="Жирный (Ctrl+B)"><strong>B</strong></button>
+  <button class="ft-btn" data-cmd="italic" title="Курсив (Ctrl+I)"><em>I</em></button>
+  <button class="ft-btn" data-cmd="underline" title="Подчёркнутый (Ctrl+U)"><u>U</u></button>
+  <button class="ft-btn" data-cmd="strikeThrough" title="Зачёркнутый"><s>S</s></button>
+  <div class="ft-divider"></div>
+  <button class="ft-btn" data-cmd="createLink" title="Ссылка">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  </button>
+  <button class="ft-btn" id="ftColorBtn" title="Цвет текста">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/></svg>
+  </button>
+
+  <div class="ft-colors" id="ftColors">
+    <div class="ft-color" style="background: #111827" data-color="#111827"></div>
+    <div class="ft-color" style="background: #768694" data-color="#768694"></div>
+    <div class="ft-color" style="background: #0DC267" data-color="#0DC267"></div>
+    <div class="ft-color" style="background: #FF4D3A" data-color="#FF4D3A"></div>
+    <div class="ft-color" style="background: #9054EA" data-color="#9054EA"></div>
+    <div class="ft-color" style="background: #F5A623" data-color="#F5A623"></div>
+    <div class="ft-color" style="background: #0070FF" data-color="#0070FF"></div>
+    <div class="ft-color" style="background: #FF299C" data-color="#FF299C"></div>
+    <div class="ft-color" style="background: #00B8D9" data-color="#00B8D9"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Заголовок</div>
+    <div class="modal-desc" id="modalDesc">Описание действия</div>
+    <input class="settings-input" id="modalInput" placeholder="">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalCancel">Отменить</button>
+      <button class="btn btn-primary" id="modalOk">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Demo pill -->
+<div class="demo-pill">
+  <span class="demo-pill-dot"></span>
+  Интерактивный прототип — Skillgrid Article Builder
+</div>
+
+<script>
+// ============================================
+// DATA MODEL
+// ============================================
+const COVER_GRADIENTS = {
+  blue:   'linear-gradient(135deg, #2151a1 0%, #0070FF 50%, #5E9EFF 100%)',
+  green:  'linear-gradient(135deg, #0a6e3d 0%, #0DC267 50%, #5FE5A1 100%)',
+  red:    'linear-gradient(135deg, #8a1b10 0%, #FF4D3A 50%, #FF8B7E 100%)',
+  purple: 'linear-gradient(135deg, #4a1f99 0%, #9054EA 50%, #C094F5 100%)',
+  orange: 'linear-gradient(135deg, #8a4a00 0%, #F5A623 50%, #FFD38A 100%)',
+  pink:   'linear-gradient(135deg, #8f1659 0%, #FF299C 50%, #FF8DC7 100%)',
+  cyan:   'linear-gradient(135deg, #00647A 0%, #00B8D9 50%, #7EDDEF 100%)',
+  dark:   'linear-gradient(135deg, #0a0f1a 0%, #1f2937 50%, #4b5563 100%)',
+  light:  'linear-gradient(135deg, #4b5563 0%, #768694 50%, #AABBCA 100%)'
+};
+
+const BLOCK_DEFAULTS = {
+  cover: () => ({
+    id: uid(),
+    type: 'cover',
+    title: 'Новая статья',
+    subtitle: 'Подзаголовок или краткое описание',
+    meta: ['Категория', '5 мин чтения'],
+    height: 'm',
+    bgImage: null,          // base64 или URL — если есть, используется вместо градиента
+    bgGradient: 'blue',     // ключ из COVER_GRADIENTS
+    darken: 50,             // 0..100, используется для фото-фона
+    align: 'left'
+  }),
+  text: () => ({
+    id: uid(),
+    type: 'text',
+    html: '<p>Нажмите, чтобы начать писать текст. Выделите слова — появится панель форматирования.</p>'
+  }),
+  image: () => ({
+    id: uid(),
+    type: 'image',
+    src: null,
+    caption: 'Подпись к изображению',
+    width: 'column',
+    radius: 'md',
+    shadow: false
+  }),
+  quote: () => ({
+    id: uid(),
+    type: 'quote',
+    text: 'Здесь будет цитата — выделите и начните писать',
+    authorName: 'Имя Фамилия',
+    authorRole: 'Должность',
+    style: 'accent',
+    accent: '#0070FF'
+  }),
+  callout: () => ({
+    id: uid(),
+    type: 'callout',
+    kind: 'tip',
+    icon: '💡',
+    title: 'Совет',
+    text: 'Полезное наблюдение или рекомендация для читателя'
+  }),
+  accordion: () => ({
+    id: uid(),
+    type: 'accordion',
+    title: 'Частые вопросы',
+    mode: 'single',
+    defaultOpen: 'first',
+    style: 'cards',
+    accent: '#0070FF',
+    showBorder: true,
+    showShadow: false,
+    items: [
+      { id: uid(), q: 'Первый вопрос', a: 'Ответ на первый вопрос. Кликните и отредактируйте.', open: true },
+      { id: uid(), q: 'Второй вопрос', a: 'Ответ на второй вопрос.' }
+    ]
+  }),
+  divider: () => ({
+    id: uid(),
+    type: 'divider',
+    style: 'dots',
+    spacing: 'md'
+  })
+};
+
+function uid() { return 'b_' + Math.random().toString(36).slice(2, 10); }
+
+// STATE
+let state = {
+  blocks: [
+    (() => {
+      const b = BLOCK_DEFAULTS.cover();
+      b.title = 'Методология Agile: с чего начать новому сотруднику';
+      b.subtitle = 'Практическое руководство: принципы, инструменты и первые шаги в agile-команде';
+      b.meta = ['Обучающий материал', '5 мин чтения'];
+      return b;
+    })(),
+    (() => {
+      const b = BLOCK_DEFAULTS.text();
+      b.html = '<h2>Что такое Agile</h2><p><strong>Agile</strong> — это не методология, а набор принципов гибкой разработки продукта. В отличие от классического водопадного подхода, agile-команды работают короткими итерациями.</p><p>В нашей компании agile — это стандарт работы всех продуктовых команд.</p>';
+      return b;
+    })(),
+    (() => {
+      const b = BLOCK_DEFAULTS.callout();
+      b.title = 'Совет';
+      b.text = 'Начните с книги «Scrum: революционный метод управления проектами» Джеффа Сазерленда — это самое доступное введение в agile-подход.';
+      return b;
+    })(),
+    (() => {
+      const b = BLOCK_DEFAULTS.accordion();
+      b.title = 'Часто задаваемые вопросы';
+      b.items = [
+        { id: uid(), q: 'Чем Scrum отличается от Kanban?', a: 'Scrum работает фиксированными итерациями (спринтами) по 2-4 недели, с жёсткими ролями и церемониями. Kanban — это непрерывный поток задач без строгих итераций, фокус на оптимизации WIP.', open: true },
+        { id: uid(), q: 'Нужно ли проходить сертификацию?', a: 'Сертификация желательна, но не обязательна. Компания оплачивает PSM-I и PSPO-I по запросу сотрудника.' },
+        { id: uid(), q: 'Где найти шаблоны наших процессов?', a: 'Шаблоны retrospective, planning и review доступны в Confluence в разделе «Agile toolkit».' }
+      ];
+      return b;
+    })(),
+    (() => {
+      const b = BLOCK_DEFAULTS.quote();
+      b.text = 'Гибкость — это не о том, чтобы делать быстрее. Это о том, чтобы делать то, что действительно нужно — и быть готовым поменять курс, когда это перестало быть нужным.';
+      b.authorName = 'Елена Петрова';
+      b.authorRole = 'Head of Product, Skillgrid';
+      return b;
+    })()
+  ],
+  selectedId: null,
+  templates: [
+    // Пример кастомных шаблонов от админа клиента
+    {
+      id: 't1',
+      name: 'Новости компании',
+      desc: 'Корпоративный формат',
+      icon: '📢',
+      blocks: ['cover', 'text', 'quote', 'text']
+    },
+    {
+      id: 't2',
+      name: 'Обучающий урок',
+      desc: 'С проверкой знаний',
+      icon: '🎓',
+      blocks: ['cover', 'text', 'callout', 'image', 'accordion']
+    }
+  ]
+};
+
+const BLOCK_META = {
+  cover:    { name: 'Обложка',     icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>' },
+  text:     { name: 'Текст',       icon: '<path d="M4 7V4h16v3"/><path d="M12 4v16"/><path d="M8 20h8"/>' },
+  image:    { name: 'Изображение', icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>' },
+  quote:    { name: 'Цитата',      icon: '<path d="M3 21c3 0 7-1 7-8V5c0-1-1-2-2-2H4c-1 0-2 1-2 2v6c0 1 1 2 2 2h3"/><path d="M15 21c3 0 7-1 7-8V5c0-1-1-2-2-2h-4c-1 0-2 1-2 2v6c0 1 1 2 2 2h3"/>' },
+  callout:  { name: 'Заметка',     icon: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>' },
+  accordion:{ name: 'Аккордеон',   icon: '<path d="M4 8h16M4 14h16"/><path d="m7 11 2 2 2-2"/>' },
+  divider:  { name: 'Разделитель', icon: '<path d="M5 12h14"/>' }
+};
+
+const PALETTE = ['#768694', '#0DC267', '#FF4D3A', '#9054EA', '#F5A623', '#F5D91F', '#0070FF', '#FF299C', '#00B8D9'];
+
+// ============================================
+// RENDER
+// ============================================
+const article = document.getElementById('article');
+const blocksGrid = document.getElementById('blocksGrid');
+const templatesList = document.getElementById('templatesList');
+
+function render() {
+  renderBlocksPanel();
+  renderTemplates();
+  renderArticle();
+  renderSettings();
+}
+
+function renderBlocksPanel() {
+  blocksGrid.innerHTML = Object.entries(BLOCK_META).map(([type, meta]) => `
+    <div class="block-card" draggable="true" data-type="${type}">
+      <div class="block-card-icon">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${meta.icon}</svg>
+      </div>
+      <span class="block-card-name">${meta.name}</span>
+    </div>
+  `).join('');
+
+  blocksGrid.querySelectorAll('.block-card').forEach(card => {
+    // DnD
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', 'new:' + card.dataset.type);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+    // Click = add to end
+    card.addEventListener('click', () => {
+      addBlock(card.dataset.type);
+    });
+  });
+}
+
+function renderTemplates() {
+  if (state.templates.length === 0) {
+    templatesList.innerHTML = `
+      <div class="panel-hint" style="text-align: center; padding: var(--sg-space-5) 0;">
+        Пока нет шаблонов.<br>
+        Создайте первый из текущей статьи — кнопка «+» вверху
+      </div>
+    `;
+    return;
+  }
+
+  templatesList.innerHTML = state.templates.map(t => `
+    <div class="template-card" data-template-id="${t.id}">
+      <div class="template-icon">${t.icon}</div>
+      <div style="flex: 1; min-width: 0;">
+        <div class="template-name">${t.name}</div>
+        <div class="template-desc">${t.desc}</div>
+      </div>
+      <button class="template-delete" data-template-id="${t.id}" title="Удалить шаблон">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+
+  templatesList.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.template-delete')) return;
+      applyTemplate(card.dataset.templateId);
+    });
+  });
+
+  templatesList.querySelectorAll('.template-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteTemplate(btn.dataset.templateId);
+    });
+  });
+}
+
+function renderArticle() {
+  if (state.blocks.length === 0) {
+    article.innerHTML = `
+      <div class="empty-article" id="emptyArticle">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <div class="empty-article-title">Пустая статья</div>
+        <div class="empty-article-desc">Перетащите блоки из левой панели, кликните по ним или выберите шаблон</div>
+      </div>
+    `;
+    setupEmptyArticleDrop();
+    return;
+  }
+
+  article.innerHTML = '';
+
+  // Первая drop-zone
+  article.appendChild(makeDropZone(0));
+
+  state.blocks.forEach((block, idx) => {
+    article.appendChild(renderBlock(block));
+    article.appendChild(makeDropZone(idx + 1));
+  });
+
+  setupDropZones();
+  setupBlockDrag();
+}
+
+function setupEmptyArticleDrop() {
+  const empty = document.getElementById('emptyArticle');
+  if (!empty) return;
+  empty.addEventListener('dragover', e => {
+    e.preventDefault();
+    empty.classList.add('drag-over');
+  });
+  empty.addEventListener('dragleave', () => empty.classList.remove('drag-over'));
+  empty.addEventListener('drop', e => {
+    e.preventDefault();
+    empty.classList.remove('drag-over');
+    const data = e.dataTransfer.getData('text/plain');
+    if (data.startsWith('new:')) {
+      addBlock(data.slice(4));
+    }
+  });
+}
+
+function makeDropZone(insertIndex) {
+  const dz = document.createElement('div');
+  dz.className = 'drop-zone';
+  dz.dataset.insertIndex = insertIndex;
+  dz.innerHTML = `<button class="drop-zone-btn" title="Добавить блок">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </button>`;
+
+  dz.querySelector('.drop-zone-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    showBlockPicker(dz, insertIndex);
+  });
+
+  return dz;
+}
+
+function setupDropZones() {
+  document.querySelectorAll('.drop-zone').forEach(dz => {
+    dz.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = e.dataTransfer.types.includes('text/plain') ? 'copy' : 'move';
+      dz.classList.add('drag-over');
+    });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      const data = e.dataTransfer.getData('text/plain');
+      const insertIndex = parseInt(dz.dataset.insertIndex);
+
+      if (data.startsWith('new:')) {
+        addBlock(data.slice(4), insertIndex);
+      } else if (data.startsWith('move:')) {
+        moveBlock(data.slice(5), insertIndex);
+      }
+    });
+  });
+}
+
+function setupBlockDrag() {
+  document.querySelectorAll('.article-block').forEach(el => {
+    const handle = el.querySelector('.drag-handle');
+    if (!handle) return;
+
+    // Делаем handle триггером для drag
+    handle.addEventListener('mousedown', () => {
+      el.setAttribute('draggable', 'true');
+    });
+    handle.addEventListener('mouseup', () => {
+      el.removeAttribute('draggable');
+    });
+
+    el.addEventListener('dragstart', e => {
+      if (!el.getAttribute('draggable')) {
+        e.preventDefault();
+        return;
+      }
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'move:' + el.dataset.blockId);
+      el.classList.add('dragging');
+    });
+
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      el.removeAttribute('draggable');
+    });
+  });
+}
+
+function renderBlock(block) {
+  const wrap = document.createElement('div');
+  wrap.className = 'article-block';
+  wrap.dataset.blockId = block.id;
+  if (block.id === state.selectedId) wrap.classList.add('selected');
+
+  // Toolbar
+  const toolbar = `
+    <div class="block-toolbar">
+      <button class="drag-handle" title="Перетащить">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+      </button>
+      <button data-action="up" title="Вверх">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+      </button>
+      <button data-action="down" title="Вниз">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <button data-action="duplicate" title="Дублировать">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+      <button data-action="delete" class="danger" title="Удалить">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+  `;
+
+  wrap.innerHTML = toolbar + blockContent(block);
+
+  // Actions
+  wrap.querySelectorAll('.block-toolbar button[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleBlockAction(block.id, btn.dataset.action);
+    });
+  });
+
+  wrap.addEventListener('click', (e) => {
+    // не перехватывать клики по контенту для редактирования
+    selectBlock(block.id);
+  });
+
+  // Bind contenteditable handlers
+  setTimeout(() => bindEditable(wrap, block), 0);
+
+  return wrap;
+}
+
+function blockContent(b) {
+  switch (b.type) {
+    case 'cover': {
+      const bgStyle = b.bgImage
+        ? `--cover-bg: url('${b.bgImage}'); --cover-darken: ${b.darken / 100};`
+        : `--cover-bg: ${COVER_GRADIENTS[b.bgGradient] || COVER_GRADIENTS.blue};`;
+      const classes = [
+        'block-cover',
+        'height-' + b.height,
+        'align-' + (b.align || 'left'),
+        b.bgImage ? 'has-image' : ''
+      ].filter(Boolean).join(' ');
+
+      return `<div class="${classes}" style="${bgStyle}">
+        <div class="cover-bg-controls">
+          ${b.bgImage ? `
+            <button class="cover-bg-btn" data-action="replace-bg" title="Заменить фон">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Заменить фото
+            </button>
+            <button class="cover-bg-btn danger" data-action="remove-bg" title="Удалить фон">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              Удалить фото
+            </button>
+          ` : `
+            <button class="cover-bg-btn" data-action="upload-bg" title="Загрузить фото-фон">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Загрузить фото
+            </button>
+          `}
+        </div>
+        <div class="block-cover-content">
+          <div class="block-cover-meta">
+            ${b.meta.map(m => `<span>${escapeHtml(m)}</span>`).join('')}
+          </div>
+          <h1 contenteditable="true" data-field="title" data-placeholder="Заголовок статьи">${escapeHtml(b.title)}</h1>
+          <p contenteditable="true" data-field="subtitle" data-placeholder="Подзаголовок (необязательно)">${escapeHtml(b.subtitle)}</p>
+        </div>
+      </div>`;
+    }
+
+    case 'text':
+      return `<div class="block-text" contenteditable="true" data-field="html">${b.html}</div>`;
+
+    case 'image':
+      return `<div class="block-image">
+        <div class="block-image-frame ${b.src ? 'has-image' : ''}" data-action="upload">
+          ${b.src ?
+            `<img src="${b.src}" alt="">` :
+            `<div style="text-align: center;">
+              <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <div style="margin-top: 8px; font-size: 13px;">Кликните, чтобы загрузить изображение</div>
+            </div>`
+          }
+        </div>
+        <div class="block-image-caption" contenteditable="true" data-field="caption" data-placeholder="Подпись к изображению (необязательно)">${escapeHtml(b.caption)}</div>
+      </div>`;
+
+    case 'quote':
+      return `<div class="block-quote">
+        <div class="quote-body" style="border-left-color: ${b.accent}">
+          <div class="quote-text" contenteditable="true" data-field="text" data-placeholder="Текст цитаты">${escapeHtml(b.text)}</div>
+          <div class="quote-author">
+            <div class="quote-avatar">${getInitials(b.authorName)}</div>
+            <div>
+              <div class="quote-name" contenteditable="true" data-field="authorName" data-placeholder="Имя">${escapeHtml(b.authorName)}</div>
+              <div class="quote-role" contenteditable="true" data-field="authorRole" data-placeholder="Должность">${escapeHtml(b.authorRole)}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    case 'callout':
+      return `<div class="block-callout-wrapper">
+        <div class="block-callout ${b.kind}">
+          <div class="callout-icon">${b.icon}</div>
+          <div class="callout-body">
+            <div class="callout-title" contenteditable="true" data-field="title" data-placeholder="Заголовок">${escapeHtml(b.title)}</div>
+            <div class="callout-text" contenteditable="true" data-field="text" data-placeholder="Текст заметки">${escapeHtml(b.text)}</div>
+          </div>
+        </div>
+      </div>`;
+
+    case 'accordion': {
+      const itemsHtml = b.items.map(item => `
+        <div class="accordion-item ${item.open ? 'open' : ''}" data-item-id="${item.id}">
+          <div class="accordion-header" data-action="toggle">
+            <span class="accordion-q" contenteditable="true" data-field="q" data-item-id="${item.id}">${escapeHtml(item.q)}</span>
+            <div class="accordion-actions">
+              <button class="accordion-action" data-action="delete-item" data-item-id="${item.id}" title="Удалить">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              </button>
+            </div>
+            <svg class="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="accordion-body">
+            <div class="accordion-body-inner" contenteditable="true" data-field="a" data-item-id="${item.id}">${escapeHtml(item.a)}</div>
+          </div>
+        </div>
+      `).join('');
+
+      return `<div class="block-accordion">
+        <div class="accordion-title" contenteditable="true" data-field="title" data-placeholder="Заголовок секции (необязательно)">${escapeHtml(b.title)}</div>
+        ${itemsHtml}
+        <div class="accordion-add" data-action="add-item">+ Добавить вопрос</div>
+      </div>`;
+    }
+
+    case 'divider':
+      return `<div class="block-divider" style="${b.spacing === 'lg' ? 'padding-top: 32px; padding-bottom: 32px;' : b.spacing === 'sm' ? 'padding-top: 12px; padding-bottom: 12px;' : ''}">
+        ${b.style === 'dots' ? '<div class="divider-dots"><span></span><span></span><span></span></div>' :
+          b.style === 'line' ? '<div class="divider-line"></div>' :
+          b.style === 'space' ? '<div class="divider-space"></div>' : ''}
+      </div>`;
+
+    default:
+      return `<div style="padding: 20px">Неизвестный тип: ${b.type}</div>`;
+  }
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase();
+}
+
+// ============================================
+// BIND EDITABLES
+// ============================================
+function bindEditable(wrap, block) {
+  wrap.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    el.addEventListener('input', () => {
+      const field = el.dataset.field;
+      const itemId = el.dataset.itemId;
+      markSaving();
+
+      if (itemId && block.type === 'accordion') {
+        const item = block.items.find(i => i.id === itemId);
+        if (item) item[field] = el.innerText;
+      } else if (field === 'html') {
+        block.html = el.innerHTML;
+      } else if (field) {
+        block[field] = el.innerText;
+      }
+
+      // Update avatar for quote author
+      if (block.type === 'quote' && field === 'authorName') {
+        const avatar = wrap.querySelector('.quote-avatar');
+        if (avatar) avatar.textContent = getInitials(el.innerText);
+      }
+
+      debouncedSave();
+    });
+
+    el.addEventListener('focus', () => selectBlock(block.id));
+    el.addEventListener('blur', () => hideFloatingToolbar());
+  });
+
+  // Accordion actions
+  wrap.querySelectorAll('[data-action="toggle"]').forEach(h => {
+    h.addEventListener('click', (e) => {
+      if (e.target.closest('.accordion-q')) return; // редактирование не переключает
+      if (e.target.closest('.accordion-action')) return;
+      const item = h.closest('.accordion-item');
+      const blockId = wrap.dataset.blockId;
+      const itemId = item.dataset.itemId;
+      toggleAccordionItem(blockId, itemId);
+    });
+  });
+
+  wrap.querySelectorAll('[data-action="delete-item"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const blockId = wrap.dataset.blockId;
+      const itemId = btn.dataset.itemId;
+      deleteAccordionItem(blockId, itemId);
+    });
+  });
+
+  const addItem = wrap.querySelector('[data-action="add-item"]');
+  if (addItem) {
+    addItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addAccordionItem(wrap.dataset.blockId);
+    });
+  }
+
+  // Image upload
+  const imgFrame = wrap.querySelector('[data-action="upload"]');
+  if (imgFrame && block.type === 'image') {
+    imgFrame.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerImageUpload(block.id);
+    });
+  }
+
+  // Cover background actions
+  if (block.type === 'cover') {
+    const uploadBtn = wrap.querySelector('[data-action="upload-bg"], [data-action="replace-bg"]');
+    const removeBtn = wrap.querySelector('[data-action="remove-bg"]');
+
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerCoverUpload(block.id);
+      });
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        block.bgImage = null;
+        renderArticle();
+        renderSettings();
+        debouncedSave();
+        toast('Фото-фон удалён');
+      });
+    }
+  }
+}
+
+function triggerCoverUpload(blockId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast('Файл слишком большой (макс. 10 МБ)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const block = state.blocks.find(b => b.id === blockId);
+      if (block) {
+        block.bgImage = reader.result;
+        renderArticle();
+        renderSettings();
+        debouncedSave();
+        toast('Фото-фон загружен');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.click();
+}
+
+// ============================================
+// BLOCK ACTIONS
+// ============================================
+function handleBlockAction(blockId, action) {
+  const idx = state.blocks.findIndex(b => b.id === blockId);
+  if (idx < 0) return;
+
+  switch (action) {
+    case 'up':
+      if (idx > 0) {
+        [state.blocks[idx - 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx - 1]];
+        render();
+      }
+      break;
+    case 'down':
+      if (idx < state.blocks.length - 1) {
+        [state.blocks[idx + 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx + 1]];
+        render();
+      }
+      break;
+    case 'duplicate': {
+      const copy = JSON.parse(JSON.stringify(state.blocks[idx]));
+      copy.id = uid();
+      if (copy.items) copy.items.forEach(i => i.id = uid());
+      state.blocks.splice(idx + 1, 0, copy);
+      state.selectedId = copy.id;
+      render();
+      toast('Блок продублирован');
+      break;
+    }
+    case 'delete':
+      state.blocks.splice(idx, 1);
+      if (state.selectedId === blockId) state.selectedId = null;
+      render();
+      toast('Блок удалён');
+      break;
+  }
+  debouncedSave();
+}
+
+function addBlock(type, atIndex) {
+  const block = BLOCK_DEFAULTS[type]();
+  if (atIndex === undefined) atIndex = state.blocks.length;
+  state.blocks.splice(atIndex, 0, block);
+  state.selectedId = block.id;
+  render();
+  debouncedSave();
+  toast(`Добавлен блок: ${BLOCK_META[type].name}`);
+}
+
+function moveBlock(blockId, toIndex) {
+  const fromIndex = state.blocks.findIndex(b => b.id === blockId);
+  if (fromIndex < 0) return;
+  const block = state.blocks[fromIndex];
+  state.blocks.splice(fromIndex, 1);
+  let newIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
+  state.blocks.splice(newIndex, 0, block);
+  render();
+  debouncedSave();
+}
+
+function selectBlock(id) {
+  state.selectedId = id;
+  document.querySelectorAll('.article-block').forEach(el => {
+    el.classList.toggle('selected', el.dataset.blockId === id);
+  });
+  renderSettings();
+}
+
+function toggleAccordionItem(blockId, itemId) {
+  const block = state.blocks.find(b => b.id === blockId);
+  if (!block) return;
+  const item = block.items.find(i => i.id === itemId);
+  if (!item) return;
+
+  if (block.mode === 'single') {
+    block.items.forEach(i => i.open = (i.id === itemId && !item.open));
+  } else {
+    item.open = !item.open;
+  }
+
+  renderArticle();
+}
+
+function addAccordionItem(blockId) {
+  const block = state.blocks.find(b => b.id === blockId);
+  if (!block) return;
+  block.items.push({ id: uid(), q: 'Новый вопрос', a: 'Ответ на вопрос' });
+  renderArticle();
+  debouncedSave();
+}
+
+function deleteAccordionItem(blockId, itemId) {
+  const block = state.blocks.find(b => b.id === blockId);
+  if (!block) return;
+  block.items = block.items.filter(i => i.id !== itemId);
+  renderArticle();
+  debouncedSave();
+}
+
+function triggerImageUpload(blockId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const block = state.blocks.find(b => b.id === blockId);
+      if (block) {
+        block.src = reader.result;
+        renderArticle();
+        debouncedSave();
+        toast('Изображение загружено');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.click();
+}
+
+// ============================================
+// SETTINGS PANEL
+// ============================================
+const settingsPanel = document.getElementById('settingsPanel');
+
+function renderSettings() {
+  const block = state.blocks.find(b => b.id === state.selectedId);
+  if (!block) {
+    settingsPanel.innerHTML = `
+      <div class="empty-settings">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <div class="empty-settings-title">Выберите блок</div>
+        <div class="empty-settings-desc">Кликните на блок в статье, чтобы увидеть его настройки</div>
+      </div>
+    `;
+    return;
+  }
+
+  settingsPanel.innerHTML = `
+    <div class="settings-header">
+      <div class="settings-block-name">
+        <div class="settings-block-name-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${BLOCK_META[block.type].icon}</svg>
+        </div>
+        ${BLOCK_META[block.type].name}
+      </div>
+    </div>
+    ${renderSettingsFields(block)}
+  `;
+
+  bindSettingsHandlers(block);
+}
+
+function renderSettingsFields(b) {
+  switch (b.type) {
+    case 'cover': {
+      const gradientSwatches = Object.entries(COVER_GRADIENTS).map(([key, g]) => `
+        <div class="gradient-swatch ${b.bgGradient === key && !b.bgImage ? 'active' : ''}"
+             data-value="${key}"
+             style="background: ${g}"
+             title="${key}"></div>
+      `).join('');
+
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Высота</label>
+          <div class="settings-radio-group" style="grid-template-columns: 1fr 1fr 1fr;" data-field="height">
+            <div class="settings-radio ${b.height === 's' ? 'active' : ''}" data-value="s">S</div>
+            <div class="settings-radio ${b.height === 'm' ? 'active' : ''}" data-value="m">M</div>
+            <div class="settings-radio ${b.height === 'l' ? 'active' : ''}" data-value="l">L</div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <label class="settings-label">Выравнивание</label>
+          <div class="settings-radio-group" data-field="align">
+            <div class="settings-radio ${b.align === 'left' ? 'active' : ''}" data-value="left">Слева</div>
+            <div class="settings-radio ${b.align === 'center' ? 'active' : ''}" data-value="center">По центру</div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <label class="settings-label">Фон</label>
+          ${b.bgImage ? `
+            <div class="cover-bg-preview" data-action="replace-bg-settings" style="background-image: url('${b.bgImage}')">
+              <div class="cover-bg-preview-overlay">
+                <span>Фото загружено</span>
+                <button class="cover-bg-preview-remove" data-action="remove-bg-settings" title="Удалить фото">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+            <button class="settings-btn-ghost" data-action="replace-bg-settings">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Заменить на другое фото
+            </button>
+          ` : `
+            <div class="cover-gradient-palette" data-field="bgGradient">
+              ${gradientSwatches}
+            </div>
+            <button class="settings-btn-ghost" data-action="upload-bg-settings" style="margin-top: 12px;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Или загрузить фото-фон
+            </button>
+          `}
+        </div>
+
+        ${b.bgImage ? `
+          <div class="settings-group">
+            <label class="settings-label">Затемнение фото <span style="color: var(--sg-text); font-weight: 600;">${b.darken}%</span></label>
+            <div class="settings-radio-group" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr;" data-field="darken">
+              <div class="settings-radio ${b.darken === 0 ? 'active' : ''}" data-value="0">0</div>
+              <div class="settings-radio ${b.darken === 25 ? 'active' : ''}" data-value="25">25</div>
+              <div class="settings-radio ${b.darken === 50 ? 'active' : ''}" data-value="50">50</div>
+              <div class="settings-radio ${b.darken === 75 ? 'active' : ''}" data-value="75">75</div>
+              <div class="settings-radio ${b.darken === 90 ? 'active' : ''}" data-value="90">90</div>
+            </div>
+            <div class="panel-hint" style="margin-top: 8px;">Тёмный градиент поверх фото — помогает читать белый текст</div>
+          </div>
+        ` : ''}
+      `;
+    }
+    case 'text':
+      return `<div class="panel-hint" style="margin-top: 0;">Выделите текст в блоке — появится панель форматирования: жирный, курсив, подчёркнутый, цвет, ссылка.</div>`;
+    case 'image':
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Ширина</label>
+          <div class="settings-radio-group" style="grid-template-columns: 1fr;" data-field="width">
+            <div class="settings-radio ${b.width === 'column' ? 'active' : ''}" data-value="column">В колонке</div>
+            <div class="settings-radio ${b.width === 'wide' ? 'active' : ''}" data-value="wide">Широкая</div>
+            <div class="settings-radio ${b.width === 'full' ? 'active' : ''}" data-value="full">На всю ширину</div>
+          </div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-toggle">
+            <label class="settings-label" style="margin: 0;">Тень</label>
+            <div class="toggle-switch ${b.shadow ? 'active' : ''}" data-field="shadow"></div>
+          </div>
+        </div>
+      `;
+    case 'quote':
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Цвет акцента</label>
+          <div class="settings-colors" data-field="accent">
+            ${PALETTE.map(c => `<div class="color-swatch ${b.accent === c ? 'active' : ''}" data-value="${c}" style="background: ${c}"></div>`).join('')}
+          </div>
+        </div>
+      `;
+    case 'callout':
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Тип</label>
+          <div class="settings-radio-group" style="grid-template-columns: 1fr 1fr;" data-field="kind">
+            <div class="settings-radio ${b.kind === 'info' ? 'active' : ''}" data-value="info">Инфо</div>
+            <div class="settings-radio ${b.kind === 'tip' ? 'active' : ''}" data-value="tip">Совет</div>
+            <div class="settings-radio ${b.kind === 'warning' ? 'active' : ''}" data-value="warning">Внимание</div>
+            <div class="settings-radio ${b.kind === 'danger' ? 'active' : ''}" data-value="danger">Важно</div>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">Иконка</label>
+          <div class="settings-radio-group" style="grid-template-columns: repeat(4, 1fr);" data-field="icon">
+            ${['💡','ℹ️','⚠️','⭐','📌','✅','❌','🎯'].map(i =>
+              `<div class="settings-radio ${b.icon === i ? 'active' : ''}" data-value="${i}">${i}</div>`
+            ).join('')}
+          </div>
+        </div>
+      `;
+    case 'accordion':
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Режим раскрытия</label>
+          <div class="settings-radio-group" data-field="mode">
+            <div class="settings-radio ${b.mode === 'single' ? 'active' : ''}" data-value="single">Один открыт</div>
+            <div class="settings-radio ${b.mode === 'multiple' ? 'active' : ''}" data-value="multiple">Несколько</div>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">Акцентный цвет</label>
+          <div class="settings-colors" data-field="accent">
+            ${PALETTE.map(c => `<div class="color-swatch ${b.accent === c ? 'active' : ''}" data-value="${c}" style="background: ${c}"></div>`).join('')}
+          </div>
+        </div>
+      `;
+    case 'divider':
+      return `
+        <div class="settings-group">
+          <label class="settings-label">Стиль</label>
+          <div class="settings-radio-group" style="grid-template-columns: 1fr 1fr;" data-field="style">
+            <div class="settings-radio ${b.style === 'line' ? 'active' : ''}" data-value="line">Линия</div>
+            <div class="settings-radio ${b.style === 'dots' ? 'active' : ''}" data-value="dots">Три точки</div>
+            <div class="settings-radio ${b.style === 'space' ? 'active' : ''}" data-value="space">Пробел</div>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">Отступ</label>
+          <div class="settings-radio-group" style="grid-template-columns: 1fr 1fr 1fr;" data-field="spacing">
+            <div class="settings-radio ${b.spacing === 'sm' ? 'active' : ''}" data-value="sm">Малый</div>
+            <div class="settings-radio ${b.spacing === 'md' ? 'active' : ''}" data-value="md">Средний</div>
+            <div class="settings-radio ${b.spacing === 'lg' ? 'active' : ''}" data-value="lg">Большой</div>
+          </div>
+        </div>
+      `;
+    default:
+      return '';
+  }
+}
+
+function bindSettingsHandlers(block) {
+  // Radio groups
+  settingsPanel.querySelectorAll('.settings-radio-group').forEach(group => {
+    const field = group.dataset.field;
+    group.querySelectorAll('.settings-radio').forEach(radio => {
+      radio.addEventListener('click', () => {
+        group.querySelectorAll('.settings-radio').forEach(r => r.classList.remove('active'));
+        radio.classList.add('active');
+        let value = radio.dataset.value;
+        if (!isNaN(parseFloat(value))) value = parseFloat(value);
+        block[field] = value;
+        renderArticle();
+        // Для cover — живые лейблы в настройках (например "Затемнение 50%")
+        if (block.type === 'cover' && field === 'darken') {
+          const label = settingsPanel.querySelector('.settings-group label[class="settings-label"] span');
+          if (label) label.textContent = block.darken + '%';
+        }
+        debouncedSave();
+      });
+    });
+  });
+
+  // Gradient palette (обложка)
+  settingsPanel.querySelectorAll('.cover-gradient-palette').forEach(group => {
+    const field = group.dataset.field;
+    group.querySelectorAll('.gradient-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        group.querySelectorAll('.gradient-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+        block[field] = sw.dataset.value;
+        block.bgImage = null; // при выборе градиента сбрасываем фото
+        renderArticle();
+        debouncedSave();
+      });
+    });
+  });
+
+  // Cover background buttons в панели настроек
+  const uploadBtn = settingsPanel.querySelector('[data-action="upload-bg-settings"], [data-action="replace-bg-settings"]');
+  if (uploadBtn && block.type === 'cover') {
+    uploadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (e.target.closest('[data-action="remove-bg-settings"]')) return;
+      triggerCoverUpload(block.id);
+    });
+  }
+
+  const removeBtn = settingsPanel.querySelector('[data-action="remove-bg-settings"]');
+  if (removeBtn && block.type === 'cover') {
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      block.bgImage = null;
+      renderArticle();
+      renderSettings();
+      debouncedSave();
+      toast('Фото-фон удалён');
+    });
+  }
+
+  // Color swatches
+  settingsPanel.querySelectorAll('.settings-colors').forEach(group => {
+    const field = group.dataset.field;
+    group.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        group.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+        block[field] = sw.dataset.value;
+        renderArticle();
+        debouncedSave();
+      });
+    });
+  });
+
+  // Toggles
+  settingsPanel.querySelectorAll('.toggle-switch').forEach(t => {
+    t.addEventListener('click', () => {
+      t.classList.toggle('active');
+      const field = t.dataset.field;
+      if (field) {
+        block[field] = t.classList.contains('active');
+        renderArticle();
+        debouncedSave();
+      }
+    });
+  });
+}
+
+// ============================================
+// BLOCK PICKER POPOVER (кнопка "+" между блоками)
+// ============================================
+function showBlockPicker(anchor, insertIndex) {
+  const existing = document.querySelector('.block-picker');
+  if (existing) existing.remove();
+
+  const picker = document.createElement('div');
+  picker.className = 'block-picker';
+  picker.style.cssText = `
+    position: absolute;
+    background: white;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    box-shadow: var(--sg-shadow-xl);
+    padding: 8px;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    min-width: 280px;
+  `;
+
+  picker.innerHTML = Object.entries(BLOCK_META).map(([type, meta]) => `
+    <button class="picker-item" data-type="${type}" style="
+      padding: 10px 6px;
+      border-radius: 8px;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--sg-text);
+      transition: background 0.1s ease;
+      cursor: pointer;
+    ">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${meta.icon}</svg>
+      ${meta.name}
+    </button>
+  `).join('');
+
+  picker.querySelectorAll('.picker-item').forEach(btn => {
+    btn.addEventListener('mouseenter', () => btn.style.background = 'var(--sg-bg)');
+    btn.addEventListener('mouseleave', () => btn.style.background = 'transparent');
+    btn.addEventListener('click', () => {
+      addBlock(btn.dataset.type, insertIndex);
+      picker.remove();
+    });
+  });
+
+  document.body.appendChild(picker);
+  const rect = anchor.getBoundingClientRect();
+  picker.style.top = (rect.bottom + 8) + 'px';
+  picker.style.left = (rect.left - 120) + 'px';
+
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', function close(e) {
+      if (!picker.contains(e.target)) {
+        picker.remove();
+        document.removeEventListener('click', close);
+      }
+    });
+  }, 0);
+}
+
+// ============================================
+// FLOATING TEXT TOOLBAR
+// ============================================
+const floatingToolbar = document.getElementById('floatingToolbar');
+const ftColors = document.getElementById('ftColors');
+let savedSelection = null;
+
+function saveSelection() {
+  const sel = window.getSelection();
+  if (sel.rangeCount) savedSelection = sel.getRangeAt(0).cloneRange();
+}
+
+function restoreSelection() {
+  if (savedSelection) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedSelection);
+  }
+}
+
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) {
+    hideFloatingToolbar();
+    return;
+  }
+
+  const range = sel.getRangeAt(0);
+  const editableParent = range.commonAncestorContainer.nodeType === 1
+    ? range.commonAncestorContainer.closest('[contenteditable="true"]')
+    : range.commonAncestorContainer.parentElement.closest('[contenteditable="true"]');
+
+  if (!editableParent) {
+    hideFloatingToolbar();
+    return;
+  }
+
+  // Показываем тулбар только для text/quote/callout/accordion-body
+  const blockWrap = editableParent.closest('.article-block');
+  if (!blockWrap) { hideFloatingToolbar(); return; }
+
+  const rect = range.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) { hideFloatingToolbar(); return; }
+
+  floatingToolbar.classList.add('visible');
+  const tbRect = floatingToolbar.getBoundingClientRect();
+  let top = rect.top - tbRect.height - 8;
+  let left = rect.left + rect.width / 2 - tbRect.width / 2;
+  if (top < 8) top = rect.bottom + 8;
+  if (left < 8) left = 8;
+  if (left + tbRect.width > window.innerWidth - 8) left = window.innerWidth - tbRect.width - 8;
+
+  floatingToolbar.style.top = top + 'px';
+  floatingToolbar.style.left = left + 'px';
+
+  // Update active states
+  floatingToolbar.querySelectorAll('.ft-btn[data-cmd]').forEach(btn => {
+    const cmd = btn.dataset.cmd;
+    if (cmd && cmd !== 'createLink') {
+      btn.classList.toggle('active', document.queryCommandState(cmd));
+    }
+  });
+
+  saveSelection();
+});
+
+function hideFloatingToolbar() {
+  floatingToolbar.classList.remove('visible');
+  ftColors.classList.remove('visible');
+}
+
+floatingToolbar.querySelectorAll('.ft-btn[data-cmd]').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault()); // keep selection
+  btn.addEventListener('click', () => {
+    const cmd = btn.dataset.cmd;
+    restoreSelection();
+    if (cmd === 'createLink') {
+      const url = prompt('URL ссылки:', 'https://');
+      if (url) document.execCommand('createLink', false, url);
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+    // Update state model (простой способ — перечитать текущий блок)
+    updateCurrentEditableToState();
+  });
+});
+
+document.getElementById('ftColorBtn').addEventListener('mousedown', e => e.preventDefault());
+document.getElementById('ftColorBtn').addEventListener('click', () => {
+  ftColors.classList.toggle('visible');
+});
+
+ftColors.querySelectorAll('.ft-color').forEach(c => {
+  c.addEventListener('mousedown', e => e.preventDefault());
+  c.addEventListener('click', () => {
+    restoreSelection();
+    document.execCommand('foreColor', false, c.dataset.color);
+    ftColors.classList.remove('visible');
+    updateCurrentEditableToState();
+  });
+});
+
+function updateCurrentEditableToState() {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const editable = range.commonAncestorContainer.nodeType === 1
+    ? range.commonAncestorContainer.closest('[contenteditable="true"]')
+    : range.commonAncestorContainer.parentElement?.closest('[contenteditable="true"]');
+  if (!editable) return;
+
+  const blockWrap = editable.closest('.article-block');
+  if (!blockWrap) return;
+  const block = state.blocks.find(b => b.id === blockWrap.dataset.blockId);
+  if (!block) return;
+
+  const field = editable.dataset.field;
+  if (field === 'html') block.html = editable.innerHTML;
+
+  debouncedSave();
+}
+
+// ============================================
+// DEVICE / MODE SWITCHER
+// ============================================
+const canvas = document.getElementById('canvas');
+
+document.querySelectorAll('.device-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const device = btn.dataset.device;
+    canvas.classList.remove('device-desktop', 'device-tablet', 'device-mobile');
+    canvas.classList.add('device-' + device);
+  });
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (btn.dataset.mode === 'preview') {
+      document.body.classList.add('preview-mode');
+      canvas.classList.add('preview-active');
+      hideFloatingToolbar();
+    } else {
+      document.body.classList.remove('preview-mode');
+      canvas.classList.remove('preview-active');
+    }
+  });
+});
+
+// ============================================
+// TEMPLATES (admin custom)
+// ============================================
+document.getElementById('saveAsTemplateBtn').addEventListener('click', () => {
+  if (state.blocks.length === 0) {
+    toast('Сначала добавьте блоки в статью');
+    return;
+  }
+  showModal({
+    title: 'Сохранить как шаблон',
+    desc: 'Шаблон будет доступен всем редакторам вашей компании при создании статьи',
+    placeholder: 'Например: «Еженедельный дайджест»',
+    onOk: (name) => {
+      if (!name) return;
+      const tpl = {
+        id: 't_' + Date.now(),
+        name: name,
+        desc: `${state.blocks.length} блок(ов)`,
+        icon: '📄',
+        blocks: JSON.parse(JSON.stringify(state.blocks))
+      };
+      state.templates.push(tpl);
+      renderTemplates();
+      toast(`Шаблон «${name}» создан`);
+    }
+  });
+});
+
+function applyTemplate(id) {
+  const tpl = state.templates.find(t => t.id === id);
+  if (!tpl) return;
+
+  showModal({
+    title: `Применить шаблон «${tpl.name}»?`,
+    desc: 'Текущее содержимое статьи будет заменено. Это действие нельзя отменить.',
+    confirmOnly: true,
+    confirmText: 'Применить',
+    onOk: () => {
+      if (Array.isArray(tpl.blocks) && tpl.blocks.length > 0 && typeof tpl.blocks[0] === 'string') {
+        // Старый формат: просто тип блоков
+        state.blocks = tpl.blocks.map(type => BLOCK_DEFAULTS[type]());
+      } else {
+        // Полный формат: структуры с контентом
+        state.blocks = JSON.parse(JSON.stringify(tpl.blocks));
+        state.blocks.forEach(b => { b.id = uid(); if (b.items) b.items.forEach(i => i.id = uid()); });
+      }
+      state.selectedId = null;
+      render();
+      toast(`Применён шаблон «${tpl.name}»`);
+    }
+  });
+}
+
+function deleteTemplate(id) {
+  const tpl = state.templates.find(t => t.id === id);
+  if (!tpl) return;
+  showModal({
+    title: `Удалить шаблон «${tpl.name}»?`,
+    desc: 'Шаблон будет удалён у всех редакторов вашей компании.',
+    confirmOnly: true,
+    confirmText: 'Удалить',
+    danger: true,
+    onOk: () => {
+      state.templates = state.templates.filter(t => t.id !== id);
+      renderTemplates();
+      toast('Шаблон удалён');
+    }
+  });
+}
+
+// ============================================
+// MODAL
+// ============================================
+const modal = document.getElementById('modal');
+const modalInput = document.getElementById('modalInput');
+let modalCallback = null;
+
+function showModal({ title, desc, placeholder, onOk, confirmOnly, confirmText = 'Подтвердить', danger = false }) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalDesc').textContent = desc;
+  modalInput.style.display = confirmOnly ? 'none' : 'block';
+  modalInput.placeholder = placeholder || '';
+  modalInput.value = '';
+  const okBtn = document.getElementById('modalOk');
+  okBtn.textContent = confirmText;
+  okBtn.classList.remove('btn-primary', 'btn-secondary');
+  okBtn.classList.add(danger ? 'btn-secondary' : 'btn-primary');
+  if (danger) okBtn.style.background = 'var(--sg-danger)', okBtn.style.color = 'white', okBtn.style.borderColor = 'var(--sg-danger)';
+  else okBtn.style.cssText = '';
+
+  modalCallback = onOk;
+  modal.classList.add('visible');
+  if (!confirmOnly) setTimeout(() => modalInput.focus(), 50);
+}
+
+document.getElementById('modalOk').addEventListener('click', () => {
+  if (modalCallback) modalCallback(modalInput.value.trim());
+  modal.classList.remove('visible');
+});
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  modal.classList.remove('visible');
+});
+
+modalInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('modalOk').click();
+  if (e.key === 'Escape') document.getElementById('modalCancel').click();
+});
+
+// ============================================
+// AUTOSAVE INDICATOR
+// ============================================
+let saveTimer;
+const saveStatus = document.getElementById('saveStatus');
+const saveStatusText = document.getElementById('saveStatusText');
+
+function markSaving() {
+  saveStatus.classList.add('saving');
+  saveStatusText.textContent = 'Сохраняется...';
+}
+
+function markSaved() {
+  saveStatus.classList.remove('saving');
+  saveStatusText.textContent = 'Сохранено';
+}
+
+function debouncedSave() {
+  clearTimeout(saveTimer);
+  markSaving();
+  saveTimer = setTimeout(markSaved, 800);
+}
+
+// ============================================
+// TOAST
+// ============================================
+function toast(text) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    if (e.key === 'd' && state.selectedId) {
+      e.preventDefault();
+      handleBlockAction(state.selectedId, 'duplicate');
+    }
+  }
+  if (e.key === 'Escape') {
+    state.selectedId = null;
+    renderArticle();
+    renderSettings();
+    hideFloatingToolbar();
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    // только если не в contenteditable
+    if (state.selectedId && !document.activeElement.isContentEditable) {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        handleBlockAction(state.selectedId, 'delete');
+      }
+    }
+  }
+});
+
+// ============================================
+// INIT
+// ============================================
+render();
+
+// Стартовое выделение первого блока
+if (state.blocks.length > 0) {
+  state.selectedId = state.blocks[0].id;
+  renderArticle();
+  renderSettings();
+}
+
+</script>
+</body>
+</html>
